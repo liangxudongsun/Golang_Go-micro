@@ -3,14 +3,13 @@ package client
 import (
 	"crypto/tls"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 
-	log "github.com/asim/go-micro/v3/logger"
-	"github.com/asim/go-micro/plugins/registry/kubernetes/v3/client/api"
-	"github.com/asim/go-micro/plugins/registry/kubernetes/v3/client/watch"
+	"github.com/asim/go-micro/plugins/registry/kubernetes/v4/client/api"
+	"github.com/asim/go-micro/plugins/registry/kubernetes/v4/client/watch"
+	"go-micro.dev/v4/logger"
 )
 
 var (
@@ -54,7 +53,7 @@ func detectNamespace() (string, error) {
 	}
 
 	// Read the file, and cast to a string
-	if ns, e := ioutil.ReadFile(nsPath); e != nil {
+	if ns, e := os.ReadFile(nsPath); e != nil {
 		return string(ns), e
 	} else {
 		return string(ns), nil
@@ -91,26 +90,26 @@ func NewClientInCluster() Kubernetes {
 
 	s, err := os.Stat(serviceAccountPath)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	if s == nil || !s.IsDir() {
-		log.Fatal(errors.New("no k8s service account found"))
+		logger.Fatal(errors.New("no k8s service account found"))
 	}
 
-	token, err := ioutil.ReadFile(path.Join(serviceAccountPath, "token"))
+	token, err := os.ReadFile(path.Join(serviceAccountPath, "token"))
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	t := string(token)
 
 	ns, err := detectNamespace()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	crt, err := CertPoolFromFile(path.Join(serviceAccountPath, "ca.crt"))
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	c := &http.Client{

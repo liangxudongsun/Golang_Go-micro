@@ -1,6 +1,6 @@
 package client
 
-import "github.com/asim/go-micro/plugins/registry/kubernetes/v3/client/watch"
+import "github.com/asim/go-micro/plugins/registry/kubernetes/v4/client/watch"
 
 // Kubernetes ...
 type Kubernetes interface {
@@ -22,9 +22,10 @@ type Pod struct {
 
 // Meta ...
 type Meta struct {
-	Name        string             `json:"name,omitempty"`
-	Labels      map[string]*string `json:"labels,omitempty"`
-	Annotations map[string]*string `json:"annotations,omitempty"`
+	Name              string             `json:"name,omitempty"`
+	Labels            map[string]*string `json:"labels,omitempty"`
+	Annotations       map[string]*string `json:"annotations,omitempty"`
+	DeletionTimestamp string             `json:"deletionTimestamp,omitempty"`
 }
 
 // Status ...

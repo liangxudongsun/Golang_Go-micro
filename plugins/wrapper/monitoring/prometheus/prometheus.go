@@ -3,12 +3,10 @@ package prometheus
 import (
 	"context"
 	"fmt"
-	"sync"
-
-	"github.com/asim/go-micro/v3/client"
-	"github.com/asim/go-micro/v3/logger"
-	"github.com/asim/go-micro/v3/registry"
-	"github.com/asim/go-micro/v3/server"
+	"go-micro.dev/v4/client"
+	"go-micro.dev/v4/logger"
+	"go-micro.dev/v4/registry"
+	"go-micro.dev/v4/server"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -21,8 +19,6 @@ var (
 	opsCounter           *prometheus.CounterVec
 	timeCounterSummary   *prometheus.SummaryVec
 	timeCounterHistogram *prometheus.HistogramVec
-
-	mu sync.Mutex
 )
 
 type Options struct {
@@ -51,9 +47,7 @@ func ServiceID(id string) Option {
 	}
 }
 
-func registerMetrics() {
-	mu.Lock()
-	defer mu.Unlock()
+func init() {
 
 	if opsCounter == nil {
 		opsCounter = prometheus.NewCounterVec(
@@ -119,7 +113,6 @@ type wrapper struct {
 }
 
 func NewClientWrapper(opts ...Option) client.Wrapper {
-	registerMetrics()
 
 	options := Options{}
 	for _, opt := range opts {
@@ -137,8 +130,6 @@ func NewClientWrapper(opts ...Option) client.Wrapper {
 }
 
 func NewCallWrapper(opts ...Option) client.CallWrapper {
-	registerMetrics()
-
 	options := Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -236,8 +227,6 @@ func (w *wrapper) Publish(ctx context.Context, p client.Message, opts ...client.
 }
 
 func NewHandlerWrapper(opts ...Option) server.HandlerWrapper {
-	registerMetrics()
-
 	options := Options{}
 	for _, opt := range opts {
 		opt(&options)
@@ -273,8 +262,6 @@ func (w *wrapper) HandlerFunc(fn server.HandlerFunc) server.HandlerFunc {
 }
 
 func NewSubscriberWrapper(opts ...Option) server.SubscriberWrapper {
-	registerMetrics()
-
 	options := Options{}
 	for _, opt := range opts {
 		opt(&options)

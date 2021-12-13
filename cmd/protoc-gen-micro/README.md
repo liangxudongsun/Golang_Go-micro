@@ -5,13 +5,13 @@ This is protobuf code generation for go-micro. We use protoc-gen-micro to reduce
 ## Install
 
 ```
-go get github.com/asim/go-micro/cmd/protoc-gen-micro/v3
+go install go-micro.dev/v4/cmd/protoc-gen-micro@v4
 ```
 
 Also required: 
 
 - [protoc](https://github.com/google/protobuf)
-- [protoc-gen-go](https://github.com/golang/protobuf)
+- [protoc-gen-go](https://google.golang.org/protobuf)
 
 ## Usage
 
@@ -112,7 +112,7 @@ message Response {
 }
 ```
 
-The proto generates a `RegisterGreeterHandler` function with a [api.Endpoint](https://godoc.org/github.com/asim/go-micro/v3/api#Endpoint). 
+The proto generates a `RegisterGreeterHandler` function with a [api.Endpoint](https://godoc.org/go-micro.dev/v3/api#Endpoint). 
 
 ```diff
 func RegisterGreeterHandler(s server.Server, hdlr GreeterHandler, opts ...server.HandlerOption) error {

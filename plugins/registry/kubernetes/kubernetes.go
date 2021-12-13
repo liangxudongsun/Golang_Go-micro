@@ -10,10 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/asim/go-micro/plugins/registry/kubernetes/v3/client"
-
-	"github.com/asim/go-micro/v3/cmd"
-	"github.com/asim/go-micro/v3/registry"
+	"github.com/asim/go-micro/plugins/registry/kubernetes/v4/client"
+	"go-micro.dev/v4/cmd"
+	"go-micro.dev/v4/registry"
 )
 
 type kregistry struct {
@@ -140,7 +139,6 @@ func (c *kregistry) Register(s *registry.Service, opts ...registry.RegisterOptio
 	}
 
 	return nil
-
 }
 
 // Deregister nils out any things set in Register
@@ -191,7 +189,7 @@ func (c *kregistry) GetService(name string, opts ...registry.GetOption) ([]*regi
 
 	// loop through items
 	for _, pod := range pods.Items {
-		if pod.Status.Phase != podRunning {
+		if pod.Status.Phase != podRunning || pod.Metadata.DeletionTimestamp != "" {
 			continue
 		}
 		// get serialised service from annotation
@@ -231,11 +229,11 @@ func (c *kregistry) ListServices(opts ...registry.ListOption) ([]*registry.Servi
 		return nil, err
 	}
 
-	// svcs mapped by name
-	svcs := make(map[string]bool)
+	// svcs mapped by name+version
+	svcs := make(map[string]*registry.Service)
 
 	for _, pod := range pods.Items {
-		if pod.Status.Phase != podRunning {
+		if pod.Status.Phase != podRunning || pod.Metadata.DeletionTimestamp != "" {
 			continue
 		}
 		for k, v := range pod.Metadata.Annotations {
@@ -249,13 +247,18 @@ func (c *kregistry) ListServices(opts ...registry.ListOption) ([]*registry.Servi
 			if err := json.Unmarshal([]byte(*v), &svc); err != nil {
 				continue
 			}
-			svcs[svc.Name] = true
+			s, ok := svcs[svc.Name+svc.Version]
+			if !ok {
+				svcs[svc.Name+svc.Version] = &svc
+				continue
+			}
+			// append to service:version nodes
+			s.Nodes = append(s.Nodes, svc.Nodes...)
 		}
 	}
-
 	var list []*registry.Service
-	for val := range svcs {
-		list = append(list, &registry.Service{Name: val})
+	for _, s := range svcs {
+		list = append(list, s)
 	}
 	return list, nil
 }

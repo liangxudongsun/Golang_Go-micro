@@ -6,19 +6,19 @@ import (
 	"crypto/tls"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
-	maddr "github.com/asim/go-micro/v3/util/addr"
-	"github.com/asim/go-micro/v3/util/buf"
-	mnet "github.com/asim/go-micro/v3/util/net"
-	mls "github.com/asim/go-micro/v3/util/tls"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+
+	maddr "go-micro.dev/v4/util/addr"
+	"go-micro.dev/v4/util/buf"
+	mnet "go-micro.dev/v4/util/net"
+	mls "go-micro.dev/v4/util/tls"
 )
 
 type httpTransport struct {
@@ -35,9 +35,10 @@ type httpTransportClient struct {
 	sync.RWMutex
 
 	// request must be stored for response processing
-	r    chan *http.Request
-	bl   []*http.Request
-	buff *bufio.Reader
+	r      chan *http.Request
+	bl     []*http.Request
+	buff   *bufio.Reader
+	closed bool
 
 	// local/remote ip
 	local  string
@@ -138,13 +139,18 @@ func (h *httpTransportClient) Recv(m *Message) error {
 		h.conn.SetDeadline(time.Now().Add(h.ht.opts.Timeout))
 	}
 
+	h.Lock()
+	if h.closed {
+		return io.EOF
+	}
 	rsp, err := http.ReadResponse(h.buff, r)
+	h.Unlock()
 	if err != nil {
 		return err
 	}
 	defer rsp.Body.Close()
 
-	b, err := ioutil.ReadAll(rsp.Body)
+	b, err := io.ReadAll(rsp.Body)
 	if err != nil {
 		return err
 	}
@@ -174,6 +180,7 @@ func (h *httpTransportClient) Close() error {
 	h.once.Do(func() {
 		h.Lock()
 		h.buff.Reset(nil)
+		h.closed = true
 		h.Unlock()
 		close(h.r)
 	})
@@ -218,7 +225,7 @@ func (h *httpTransportSocket) Recv(m *Message) error {
 		}
 
 		// read body
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}
@@ -292,7 +299,7 @@ func (h *httpTransportSocket) Send(m *Message) error {
 
 		rsp := &http.Response{
 			Header:        hdr,
-			Body:          ioutil.NopCloser(bytes.NewReader(m.Body)),
+			Body:          io.NopCloser(bytes.NewReader(m.Body)),
 			Status:        "200 OK",
 			StatusCode:    200,
 			Proto:         "HTTP/1.1",
@@ -343,7 +350,7 @@ func (h *httpTransportSocket) error(m *Message) error {
 	if h.r.ProtoMajor == 1 {
 		rsp := &http.Response{
 			Header:        make(http.Header),
-			Body:          ioutil.NopCloser(bytes.NewReader(m.Body)),
+			Body:          io.NopCloser(bytes.NewReader(m.Body)),
 			Status:        "500 Internal Server Error",
 			StatusCode:    500,
 			Proto:         "HTTP/1.1",
@@ -403,12 +410,12 @@ func (h *httpTransportListener) Accept(fn func(Socket)) error {
 
 		// read a regular request
 		if r.ProtoMajor == 1 {
-			b, err := ioutil.ReadAll(r.Body)
+			b, err := io.ReadAll(r.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			r.Body = ioutil.NopCloser(bytes.NewReader(b))
+			r.Body = io.NopCloser(bytes.NewReader(b))
 			// hijack the conn
 			hj, ok := w.(http.Hijacker)
 			if !ok {

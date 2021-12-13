@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/asim/go-micro/v3/config/loader"
-	"github.com/asim/go-micro/v3/config/reader"
-	"github.com/asim/go-micro/v3/config/reader/json"
-	"github.com/asim/go-micro/v3/config/source"
+	"go-micro.dev/v4/config/loader"
+	"go-micro.dev/v4/config/reader"
+	"go-micro.dev/v4/config/reader/json"
+	"go-micro.dev/v4/config/source"
 )
 
 type memory struct {
@@ -140,7 +140,9 @@ func (m *memory) reload() error {
 	}
 
 	// set values
-	m.vals, _ = m.opts.Reader.Values(set)
+	if vals, err := m.opts.Reader.Values(set); err != nil {
+		m.vals = vals
+	}
 	m.snap = &loader.Snapshot{
 		ChangeSet: set,
 		Version:   genVer(),

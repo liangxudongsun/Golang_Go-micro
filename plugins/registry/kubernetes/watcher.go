@@ -6,10 +6,10 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/asim/go-micro/v3/logger"
-	"github.com/asim/go-micro/v3/registry"
-	"github.com/asim/go-micro/plugins/registry/kubernetes/v3/client"
-	"github.com/asim/go-micro/plugins/registry/kubernetes/v3/client/watch"
+	"github.com/asim/go-micro/plugins/registry/kubernetes/v4/client"
+	"github.com/asim/go-micro/plugins/registry/kubernetes/v4/client/watch"
+	"go-micro.dev/v4/logger"
+	"go-micro.dev/v4/registry"
 )
 
 type k8sWatcher struct {
@@ -28,17 +28,11 @@ func (k *k8sWatcher) updateCache() ([]*registry.Result, error) {
 		return nil, err
 	}
 
-	k.RLock()
-	k.RUnlock()
-
 	var results []*registry.Result
 
 	for _, pod := range podList.Items {
 		rslts := k.buildPodResults(&pod, nil)
-
-		for _, r := range rslts {
-			results = append(results, r)
-		}
+		results = append(results, rslts...)
 
 		k.Lock()
 		k.pods[pod.Metadata.Name] = &pod
@@ -131,7 +125,7 @@ func (k *k8sWatcher) buildPodResults(pod *client.Pod, cache *client.Pod) []*regi
 func (k *k8sWatcher) handleEvent(event watch.Event) {
 	var pod client.Pod
 	if err := json.Unmarshal([]byte(event.Object), &pod); err != nil {
-		log.Error("K8s Watcher: Couldnt unmarshal event object from pod")
+		logger.Error("K8s Watcher: Couldnt unmarshal event object from pod")
 		return
 	}
 
@@ -155,7 +149,7 @@ func (k *k8sWatcher) handleEvent(event watch.Event) {
 
 		for _, result := range results {
 			// pod isnt running
-			if pod.Status.Phase != podRunning {
+			if pod.Status.Phase != podRunning || pod.Metadata.DeletionTimestamp != "" {
 				result.Action = "delete"
 			}
 			k.next <- result

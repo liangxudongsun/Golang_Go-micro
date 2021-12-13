@@ -1,8 +1,15 @@
-module github.com/asim/go-micro/plugins/logger/zerolog/v3
+module github.com/asim/go-micro/plugins/logger/zerolog/v4
 
-go 1.13
+go 1.17
 
 require (
-	github.com/asim/go-micro/v3 v3.0.0-20210120135431-d94936f6c97c
-	github.com/rs/zerolog v1.18.0
+	github.com/rs/zerolog v1.23.0
+	go-micro.dev/v4 v4.2.1
 )
+
+require (
+	github.com/google/uuid v1.2.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+)
+
+replace go-micro.dev/v4 => ../../../../go-micro

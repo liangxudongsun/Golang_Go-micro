@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/asim/go-micro/v3/config/loader"
-	"github.com/asim/go-micro/v3/config/loader/memory"
-	"github.com/asim/go-micro/v3/config/reader"
-	"github.com/asim/go-micro/v3/config/reader/json"
-	"github.com/asim/go-micro/v3/config/source"
+	"go-micro.dev/v4/config/loader"
+	"go-micro.dev/v4/config/loader/memory"
+	"go-micro.dev/v4/config/reader"
+	"go-micro.dev/v4/config/reader/json"
+	"go-micro.dev/v4/config/source"
 )
 
 type config struct {
@@ -33,7 +33,10 @@ type watcher struct {
 func newConfig(opts ...Option) (Config, error) {
 	var c config
 
-	c.Init(opts...)
+	err := c.Init(opts...)
+	if err != nil {
+		return nil, err
+	}
 	go c.run()
 
 	return &c, nil

@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/asim/go-micro/v3"
-	bmemory "github.com/asim/go-micro/plugins/broker/memory/v3"
-	"github.com/asim/go-micro/v3/client"
-	gcli "github.com/asim/go-micro/plugins/client/grpc/v3"
-	"github.com/asim/go-micro/v3/errors"
-	rmemory "github.com/asim/go-micro/plugins/registry/memory/v3"
-	"github.com/asim/go-micro/v3/server"
-	gsrv "github.com/asim/go-micro/plugins/server/grpc/v3"
-	tgrpc "github.com/asim/go-micro/plugins/transport/grpc/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/asim/go-micro/plugins/server/grpc/v3/proto"
+	"go-micro.dev/v4"
+	"go-micro.dev/v4/broker"
+	"go-micro.dev/v4/client"
+	"go-micro.dev/v4/errors"
+	"go-micro.dev/v4/registry"
+	"go-micro.dev/v4/server"
+	"go-micro.dev/v4/transport"
+
+	gcli "github.com/asim/go-micro/plugins/client/grpc/v4"
+	gsrv "github.com/asim/go-micro/plugins/server/grpc/v4"
+	pb "github.com/asim/go-micro/plugins/server/grpc/v4/proto"
+	tgrpc "github.com/asim/go-micro/plugins/transport/grpc/v4"
 )
 
 // server is used to implement helloworld.GreeterServer.
@@ -56,7 +58,7 @@ func (s *testServer) CallPcreInvalid(ctx context.Context, req *pb.Request, rsp *
 // TestHello implements helloworld.GreeterServer
 func (s *testServer) Call(ctx context.Context, req *pb.Request, rsp *pb.Response) error {
 	if req.Name == "Error" {
-		return &errors.Error{Id: "1", Code: 99, Detail: "detail"}
+		return &errors.Error{Id: "1", Code: 99, Detail: "detail\xc5"}
 	}
 
 	rsp.Msg = "Hello " + req.Name
@@ -65,8 +67,8 @@ func (s *testServer) Call(ctx context.Context, req *pb.Request, rsp *pb.Response
 
 /*
 func BenchmarkServer(b *testing.B) {
-	r := rmemory.NewRegistry()
-	br := bmemory.NewBroker()
+	r := registry.NewMemoryRegistry()
+	br := broker.NewMemoryBroker()
 	tr := tgrpc.NewTransport()
 	s := gsrv.NewServer(
 		server.Broker(br),
@@ -106,21 +108,7 @@ func BenchmarkServer(b *testing.B) {
 
 }
 */
-func TestGRPCServer(t *testing.T) {
-	r := rmemory.NewRegistry()
-	b := bmemory.NewBroker()
-	tr := tgrpc.NewTransport()
-	s := gsrv.NewServer(
-		server.Broker(b),
-		server.Name("foo"),
-		server.Registry(r),
-		server.Transport(tr),
-	)
-	c := gcli.NewClient(
-		client.Registry(r),
-		client.Broker(b),
-		client.Transport(tr),
-	)
+func testGRPCServer(t *testing.T, s server.Server, c client.Client, r registry.Registry, testRPC bool) {
 	ctx := context.TODO()
 
 	h := &testServer{}
@@ -165,6 +153,10 @@ func TestGRPCServer(t *testing.T) {
 		t.Fatal("this must return error, as we return error from handler")
 	}
 
+	if !testRPC {
+		return
+	}
+
 	cc, err := grpc.Dial(s.Options().Address, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("failed to dial server: %v", err)
@@ -196,8 +188,68 @@ func TestGRPCServer(t *testing.T) {
 		if !ok {
 			t.Fatalf("invalid error received %#+v\n", st.Details()[0])
 		}
-		if verr.Code != 99 && verr.Id != "1" && verr.Detail != "detail" {
+		if verr.Code != 99 || verr.Id != "1" || verr.Detail != "detail" {
 			t.Fatalf("invalid error received %#+v\n", verr)
 		}
 	}
+}
+
+func getTestHarness() (registry.Registry, broker.Broker, transport.Transport) {
+	r := registry.NewMemoryRegistry()
+	b := broker.NewMemoryBroker()
+	tr := tgrpc.NewTransport()
+	return r, b, tr
+}
+
+func TestGRPCServer(t *testing.T) {
+	r, b, tr := getTestHarness()
+	s := gsrv.NewServer(
+		server.Broker(b),
+		server.Name("foo"),
+		server.Registry(r),
+		server.Transport(tr),
+	)
+	c := gcli.NewClient(
+		client.Registry(r),
+		client.Broker(b),
+		client.Transport(tr),
+	)
+	testGRPCServer(t, s, c, r, true)
+}
+
+func TestGRPCServerInitAfterNew(t *testing.T) {
+	r, b, tr := getTestHarness()
+	s := gsrv.NewServer()
+	s.Init(
+		server.Broker(b),
+		server.Name("foo"),
+		server.Registry(r),
+		server.Transport(tr),
+	)
+	c := gcli.NewClient(
+		client.Registry(r),
+		client.Broker(b),
+		client.Transport(tr),
+	)
+	testGRPCServer(t, s, c, r, true)
+}
+
+func TestGRPCServerInjectedServer(t *testing.T) {
+	r, b, tr := getTestHarness()
+	srv := grpc.NewServer()
+	s := gsrv.NewServer(
+		gsrv.Server(srv),
+	)
+	s.Init(
+		server.Broker(b),
+		server.Name("foo"),
+		server.Registry(r),
+		server.Transport(tr),
+	)
+	c := gcli.NewClient(
+		client.Registry(r),
+		client.Broker(b),
+		client.Transport(tr),
+	)
+	testGRPCServer(t, s, c, r, false)
 }

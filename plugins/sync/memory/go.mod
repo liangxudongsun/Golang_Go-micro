@@ -1,5 +1,7 @@
-module github.com/asim/go-micro/plugins/sync/memory/v3
+module github.com/asim/go-micro/plugins/sync/memory/v4
 
-go 1.15
+go 1.17
 
-require github.com/asim/go-micro/v3 v3.0.0-20210120135431-d94936f6c97c
+require go-micro.dev/v4 v4.2.1
+
+replace go-micro.dev/v4 => ../../../../go-micro

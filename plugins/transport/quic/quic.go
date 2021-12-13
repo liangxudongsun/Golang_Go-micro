@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/gob"
+	"go-micro.dev/v4/cmd"
 	"time"
 
-	"github.com/asim/go-micro/v3/transport"
-	utls "github.com/asim/go-micro/v3/util/tls"
+	"go-micro.dev/v4/transport"
+	utls "go-micro.dev/v4/util/tls"
 	quic "github.com/lucas-clemente/quic-go"
 )
 
@@ -32,6 +33,10 @@ type quicListener struct {
 	l    quic.Listener
 	t    *quicTransport
 	opts transport.ListenOptions
+}
+
+func init() {
+	cmd.DefaultTransports["quic"] = NewTransport
 }
 
 func (q *quicClient) Close() error {

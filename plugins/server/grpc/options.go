@@ -5,11 +5,11 @@ import (
 	"crypto/tls"
 	"net"
 
-	"github.com/asim/go-micro/v3/broker"
-	"github.com/asim/go-micro/v3/codec"
-	"github.com/asim/go-micro/v3/registry"
-	"github.com/asim/go-micro/v3/server"
-	"github.com/asim/go-micro/v3/transport"
+	"go-micro.dev/v4/broker"
+	"go-micro.dev/v4/codec"
+	"go-micro.dev/v4/registry"
+	"go-micro.dev/v4/server"
+	"go-micro.dev/v4/transport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/encoding"
 )
@@ -20,6 +20,7 @@ type netListener struct{}
 type maxMsgSizeKey struct{}
 type maxConnKey struct{}
 type tlsAuth struct{}
+type grpcServerKey struct{}
 
 // gRPC Codec to be used to encode/decode requests for a given content type
 func Codec(contentType string, c encoding.Codec) server.Option {
@@ -51,6 +52,14 @@ func Listener(l net.Listener) server.Option {
 	return setServerOption(netListener{}, l)
 }
 
+// Server specifies a *grpc.Server to use instead of the default
+// This is for rare use case where user need to expose grpc.Server for
+// customization. Please NOTE however user injected grpcServer doesn't support
+// server Handler abstraction
+func Server(srv *grpc.Server) server.Option {
+	return setServerOption(grpcServerKey{}, srv)
+}
+
 // Options to be used to configure gRPC options
 func Options(opts ...grpc.ServerOption) server.Option {
 	return setServerOption(grpcOptions{}, opts)
@@ -66,15 +75,16 @@ func MaxMsgSize(s int) server.Option {
 
 func newOptions(opt ...server.Option) server.Options {
 	opts := server.Options{
-		Codecs:    make(map[string]codec.NewCodec),
-		Metadata:  map[string]string{},
-		Broker:    broker.DefaultBroker,
-		Registry:  registry.DefaultRegistry,
-		Transport: transport.DefaultTransport,
-		Address:   server.DefaultAddress,
-		Name:      server.DefaultName,
-		Id:        server.DefaultId,
-		Version:   server.DefaultVersion,
+		Codecs:        make(map[string]codec.NewCodec),
+		Metadata:      map[string]string{},
+		Broker:        broker.DefaultBroker,
+		Registry:      registry.DefaultRegistry,
+		RegisterCheck: server.DefaultRegisterCheck,
+		Transport:     transport.DefaultTransport,
+		Address:       server.DefaultAddress,
+		Name:          server.DefaultName,
+		Id:            server.DefaultId,
+		Version:       server.DefaultVersion,
 	}
 
 	for _, o := range opt {

@@ -3,8 +3,8 @@ package selector
 import (
 	"time"
 
-	"github.com/asim/go-micro/v3/registry"
-	"github.com/asim/go-micro/v3/registry/cache"
+	"go-micro.dev/v4/registry"
+	"go-micro.dev/v4/registry/cache"
 )
 
 type registrySelector struct {
@@ -13,13 +13,13 @@ type registrySelector struct {
 }
 
 func (c *registrySelector) newCache() cache.Cache {
-	ropts := []cache.Option{}
+	opts := make([]cache.Option, 0, 1)
 	if c.so.Context != nil {
 		if t, ok := c.so.Context.Value("selector_ttl").(time.Duration); ok {
-			ropts = append(ropts, cache.WithTTL(t))
+			opts = append(opts, cache.WithTTL(t))
 		}
 	}
-	return cache.New(c.so.Registry, ropts...)
+	return cache.New(c.so.Registry, opts...)
 }
 
 func (c *registrySelector) Init(opts ...Option) error {

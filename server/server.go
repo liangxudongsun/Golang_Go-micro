@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/asim/go-micro/v3/codec"
-	"github.com/asim/go-micro/v3/logger"
-	"github.com/asim/go-micro/v3/registry"
-	signalutil "github.com/asim/go-micro/v3/util/signal"
 	"github.com/google/uuid"
+	"go-micro.dev/v4/codec"
+	"go-micro.dev/v4/logger"
+	"go-micro.dev/v4/registry"
+	signalutil "go-micro.dev/v4/util/signal"
 )
 
 // Server is a simple micro server abstraction
@@ -149,7 +149,6 @@ var (
 
 	// NewServer creates a new server
 	NewServer func(...Option) Server = newRpcServer
-	log                              = logger.NewHelper(logger.DefaultLogger).WithFields(map[string]interface{}{"service": "server"})
 )
 
 // DefaultOptions returns config options for the default service
@@ -212,8 +211,8 @@ func Run() error {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, signalutil.Shutdown()...)
 
-	if logger.V(logger.InfoLevel, log) {
-		log.Infof("Received signal %s", <-ch)
+	if logger.V(logger.InfoLevel, logger.DefaultLogger) {
+		logger.Infof("Received signal %s", <-ch)
 	}
 	return Stop()
 }
@@ -221,16 +220,16 @@ func Run() error {
 // Start starts the default server
 func Start() error {
 	config := DefaultServer.Options()
-	if logger.V(logger.InfoLevel, log) {
-		log.Infof("Starting server %s id %s", config.Name, config.Id)
+	if logger.V(logger.InfoLevel, logger.DefaultLogger) {
+		logger.Infof("Starting server %s id %s", config.Name, config.Id)
 	}
 	return DefaultServer.Start()
 }
 
 // Stop stops the default server
 func Stop() error {
-	if logger.V(logger.InfoLevel, log) {
-		log.Infof("Stopping server")
+	if logger.V(logger.InfoLevel, logger.DefaultLogger) {
+		logger.Infof("Stopping server")
 	}
 	return DefaultServer.Stop()
 }

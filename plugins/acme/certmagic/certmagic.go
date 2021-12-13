@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
+	"go-micro.dev/v4/api/server/acme"
+	"go-micro.dev/v4/logger"
 	"github.com/caddyserver/certmagic"
-	"github.com/asim/go-micro/v3/api/server/acme"
-	"github.com/asim/go-micro/v3/logger"
 )
 
 type certmagicProvider struct {

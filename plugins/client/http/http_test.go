@@ -5,20 +5,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"testing"
 
-	"github.com/asim/go-micro/v3/client"
-	"github.com/asim/go-micro/v3/selector"
-	"github.com/asim/go-micro/v3/registry"
-	"github.com/asim/go-micro/plugins/registry/memory/v3"
-	"github.com/asim/go-micro/plugins/client/http/v3/test"
+	"github.com/asim/go-micro/plugins/client/http/v4/test"
+	"go-micro.dev/v4/client"
+	"go-micro.dev/v4/registry"
+	"go-micro.dev/v4/selector"
 )
 
 func TestHTTPClient(t *testing.T) {
-	r := memory.NewRegistry()
+	r := registry.NewMemoryRegistry()
 	s := selector.NewSelector(selector.Registry(r))
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -42,7 +41,7 @@ func TestHTTPClient(t *testing.T) {
 			http.Error(w, "codec not found", 500)
 			return
 		}
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -89,7 +88,11 @@ func TestHTTPClient(t *testing.T) {
 			Seq:  int64(i),
 			Data: fmt.Sprintf("message %d", i),
 		}
-		req := c.NewRequest("test.service", "/foo/bar", msg)
+		endpoint := "/foo/bar"
+		if i%2 == 0 {
+			endpoint = endpoint + "?pageNum=1&pageSize=2"
+		}
+		req := c.NewRequest("test.service", endpoint, msg)
 		rsp := new(test.Message)
 		err := c.Call(context.TODO(), req, rsp)
 		if err != nil {
@@ -102,7 +105,7 @@ func TestHTTPClient(t *testing.T) {
 }
 
 func TestHTTPClientStream(t *testing.T) {
-	r := memory.NewRegistry()
+	r := registry.NewMemoryRegistry()
 	s := selector.NewSelector(selector.Registry(r))
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -143,7 +146,7 @@ func TestHTTPClientStream(t *testing.T) {
 			http.Error(w, "codec not found", 500)
 			return
 		}
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -188,7 +191,7 @@ func TestHTTPClientStream(t *testing.T) {
 				return
 			}
 
-			b, err = ioutil.ReadAll(r.Body)
+			b, err = io.ReadAll(r.Body)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return

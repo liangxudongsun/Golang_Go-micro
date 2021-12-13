@@ -2,14 +2,13 @@ package consul
 
 import (
 	"fmt"
-	"log"
-	"os"
+	"net"
 	"sync"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/api/watch"
-	"github.com/asim/go-micro/v3/registry"
-	regutil "github.com/asim/go-micro/v3/util/registry"
+	"go-micro.dev/v4/registry"
+	regutil "go-micro.dev/v4/util/registry"
 )
 
 type consulWatcher struct {
@@ -46,7 +45,7 @@ func newConsulWatcher(cr *consulRegistry, opts ...registry.WatchOption) (registr
 	}
 
 	wp.Handler = cw.handle
-	go wp.RunWithClientAndLogger(cr.Client(), log.New(os.Stderr, "", log.LstdFlags))
+	go wp.RunWithClientAndHclog(cr.Client(), wp.Logger)
 	cw.wp = wp
 
 	return cw, nil
@@ -104,7 +103,7 @@ func (cw *consulWatcher) serviceHandler(idx uint64, data interface{}) {
 
 		svc.Nodes = append(svc.Nodes, &registry.Node{
 			Id:       id,
-			Address:  fmt.Sprintf("%s:%d", address, e.Service.Port),
+			Address:  net.JoinHostPort(address, fmt.Sprint(e.Service.Port)),
 			Metadata: decodeMetadata(e.Service.Tags),
 		})
 	}
@@ -210,7 +209,7 @@ func (cw *consulWatcher) handle(idx uint64, data interface{}) {
 		})
 		if err == nil {
 			wp.Handler = cw.serviceHandler
-			go wp.RunWithClientAndLogger(cw.r.Client(), log.New(os.Stderr, "", log.LstdFlags))
+			go wp.RunWithClientAndHclog(cw.r.Client(), wp.Logger)
 			cw.watchers[service] = wp
 			cw.next <- &registry.Result{Action: "create", Service: &registry.Service{Name: service}}
 		}
@@ -263,9 +262,6 @@ func (cw *consulWatcher) Next() (*registry.Result, error) {
 		}
 		return r, nil
 	}
-	// NOTE: This is a dead code path: e.g. it will never be reached
-	// as we return in all previous code paths never leading to this return
-	return nil, registry.ErrWatcherStopped
 }
 
 func (cw *consulWatcher) Stop() {

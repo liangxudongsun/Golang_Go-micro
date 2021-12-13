@@ -1,8 +1,16 @@
-module github.com/asim/go-micro/plugins/logger/zap/v3
+module github.com/asim/go-micro/plugins/logger/zap/v4
 
-go 1.13
+go 1.17
 
 require (
-	github.com/asim/go-micro/v3 v3.0.0-20210120135431-d94936f6c97c
-	go.uber.org/zap v1.13.0
+	go-micro.dev/v4 v4.2.1
+	go.uber.org/zap v1.17.0
 )
+
+require (
+	github.com/google/uuid v1.2.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+)
+
+replace go-micro.dev/v4 => ../../../../go-micro

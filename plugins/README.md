@@ -1,4 +1,4 @@
-# Plugins [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GoDoc](https://godoc.org/github.com/asim/go-micro/plugins?status.svg)](https://godoc.org/github.com/asim/go-micro/plugins) [![Go Report Card](https://goreportcard.com/badge/micro/go-plugins)](https://goreportcard.com/report/github.com/asim/go-micro/plugins)
+# Plugins [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GoDoc](https://godoc.org/github.com/asim/go-micro/plugins?status.svg)](https://godoc.org/github.com/asim/go-micro/plugins)
 
 Go plugins is a place for community maintained plugins.
 
@@ -40,9 +40,9 @@ Import the plugins in a `plugins.go` file
 package main
 
 import (
-	_ "github.com/asim/go-micro/plugins/broker/rabbitmq/v3"
-	_ "github.com/asim/go-micro/plugins/registry/kubernetes/v3"
-	_ "github.com/asim/go-micro/plugins/transport/nats/v3"
+	_ "github.com/asim/go-micro/plugins/broker/rabbitmq/v4"
+	_ "github.com/asim/go-micro/plugins/registry/kubernetes/v4"
+	_ "github.com/asim/go-micro/plugins/transport/nats/v4"
 )
 ```
 
@@ -52,7 +52,7 @@ Create your service and ensure you call `service.Init`
 package main
 
 import (
-	"github.com/asim/go-micro/v3"
+	"go-micro.dev/v4"
 )
 
 func main() {
@@ -97,8 +97,8 @@ Import and set as options when creating a new service
 
 ```go
 import (
-	"github.com/asim/go-micro/v3"
-	"github.com/asim/go-micro/plugins/registry/kubernetes/v3"
+	"go-micro.dev/v4"
+	"github.com/asim/go-micro/plugins/registry/kubernetes/v4"
 )
 
 func main() {
@@ -125,9 +125,9 @@ Create file plugins.go
 package main
 
 import (
-	_ "github.com/asim/go-micro/plugins/broker/rabbitmq/v3"
-	_ "github.com/asim/go-micro/plugins/registry/kubernetes/v3"
-	_ "github.com/asim/go-micro/plugins/transport/nats/v3"
+	_ "github.com/asim/go-micro/plugins/broker/rabbitmq/v4"
+	_ "github.com/asim/go-micro/plugins/registry/kubernetes/v4"
+	_ "github.com/asim/go-micro/plugins/transport/nats/v4"
 )
 ```
 
